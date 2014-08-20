@@ -1,16 +1,16 @@
-import pygame, random , sys , time
+import pygame, random , sys 
 from pygame.locals import *
-
-# Global constants
 
 # Screen dimensions
 SCREEN_WIDTH = 640
 SCREEN_HEIGHT = 480
 
+# Global constants
 WHITE     = (255, 255, 255)
 BLACK     = (  0,   0,   0)
 LIGHTBLUE = (  0,   0, 155)
-FPS = 40
+FPS = 60
+
 class Player(pygame.sprite.Sprite):
 
     # set speed vector of the player
@@ -24,6 +24,7 @@ class Player(pygame.sprite.Sprite):
 
         # Create player image
         self.image = pygame.image.load('player.png')
+        self.image = pygame.transform.scale(self.image, (50, 50))
         self.image.set_colorkey(WHITE)
 
         # Set a referance to the image rect.
@@ -40,19 +41,19 @@ class Player(pygame.sprite.Sprite):
         """ Move the player. """
 
         # Move left/right
-
-        self.rect.x += self.change_x
-        
+        #if self.rect.x > 0 and (self.rect.x + 50) < SCREEN_WIDTH:
+        self.rect.move_ip(self.change_x, 0)
+       
         # Move up/down
-        self.rect.y += self.change_y
+        #if self.rect.y > 0 and (self.rect.y + 50) < SCREEN_HEIGHT:
+        self.rect.move_ip(0, self.change_y)
 
+        
 
     def stop(self):
         """ Called when the user lets off the keyboard."""
-        self.change_x = 0
-        self.change_y = 0
-        self.image = pygame.image.load('player.png')
-        self.image.set_colorkey(WHITE)
+        self.change_x = - self.change_x
+        self.change_y = - self.change_y
                 
 class Enemy(pygame.sprite.Sprite):
     """ This class represents the enemy sprites."""
@@ -101,11 +102,13 @@ class Bullet(pygame.sprite.Sprite):
 
         self.rect = self.image.get_rect()
         
-
-
     def update(self):
         """ Move the bullet. """
         self.rect.y -= 10
+        # Remove the bullet if it flies up off the screen
+        if self.rect.y < - self.rect.height:
+            self.kill()
+            
 
 class Game(object):
     """ This class represents an instance of the game. If we need to
@@ -117,18 +120,19 @@ class Game(object):
     enemy_list = None
     bullet_list = None
     all_sprites_list = None
-    bullet = Bullet()
+    
 
     # Other data
-    game_over = False
-    score = 0
-    moverate = 5
-
+    size = [SCREEN_WIDTH, SCREEN_HEIGHT]
+    screen = pygame.display.set_mode(size)
+    screen_rect = screen.get_rect()
+    
     # --- Class methods
     # Set up the game
     def __init__(self):
         self.score = 0
         self.game_over = False
+        self.moverate = 5
 
         # Create sprite lists
         self.enemy_list = pygame.sprite.Group()
@@ -149,10 +153,12 @@ class Game(object):
         self.player = Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT - (SCREEN_HEIGHT / 6))
         self.all_sprites_list.add(self.player)
 
+        
+
 
     def process_events(self):
         """ Process all of the events. Return "True" if we need to close the window."""
-
+        shot = pygame.mixer.Sound("fire.ogg")
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return True
@@ -171,15 +177,16 @@ class Game(object):
                     self.player.changespeed(0, -self.moverate)
                 elif event.key in (K_DOWN , K_s):
                     self.player.changespeed(0, self.moverate)
-                elif event.key == K_SPACE:
-                    # Fire bullet
+                elif event.key == K_SPACE: # Fire bullet
                     bullet = Bullet()
+                    shot.play()
                     # Set bullet so it is where the player is
-                    self.bullet.rect.centerx = self.player.rect.centerx 
-                    self.bullet.rect.y = self.player.rect.y
+                    bullet.rect.centerx = self.player.rect.centerx 
+                    bullet.rect.y = self.player.rect.y
+                    
                     # Add bullet to lists
-                    self.all_sprites_list.add(self.bullet)
-                    self.bullet_list.add(self.bullet)
+                    self.all_sprites_list.add(bullet)
+                    self.bullet_list.add(bullet)
 
             elif event.type == KEYUP:
                 if event.key in (K_RIGHT ,K_d):
@@ -190,9 +197,7 @@ class Game(object):
                     self.player.changespeed(0, self.moverate)
                 elif event.key in (K_DOWN , K_s):
                     self.player.changespeed(0, -self.moverate)
-
            
-
     def run_logic(self):
         """ This method is run each time through the frame.
             It updates positions and checks for collisions."""
@@ -210,7 +215,7 @@ class Game(object):
             # Bullet Mechanics
             for bullet in self.bullet_list:
                 # See if the bullets has collided with anything.
-                self.enemy_hit_list = pygame.sprite.spritecollide(self.bullet, self.enemy_list, True)
+                self.enemy_hit_list = pygame.sprite.spritecollide(bullet, self.enemy_list, True)
 
                 # For each enemy hit, remove bullet and enemy and add to score
                 for enemy in self.enemy_hit_list:
@@ -218,17 +223,13 @@ class Game(object):
                     self.all_sprites_list.remove(bullet)
                     self.score += 1
 
-                # Remove the bullet if it flies up off the screen
-                if bullet.rect.y < -10:
-                    self.bullet_list.remove(bullet)
-                    self.all_sprites_list.remove(bullet)
-
             # Player Mechanics
             for enemy in self.enemy_list:
                 # See if player has collided with anything.
                 self.player_hit_list = pygame.sprite.spritecollide(self.player, self.enemy_list, True)
 
                 if len(self.player_hit_list) == 1:
+                    # If player is hit, show game over.
                     self.game_over = True
 
     def display_frame(self, screen):
@@ -244,6 +245,7 @@ class Game(object):
             screen.blit(text, [center_x, center_y])
 
         if not self.game_over:
+            self.player.rect.clamp_ip(self.screen_rect)
             self.all_sprites_list.draw(screen)
  
         pygame.display.flip()
@@ -256,7 +258,7 @@ def main():
     size = [SCREEN_WIDTH, SCREEN_HEIGHT]
     screen = pygame.display.set_mode(size)
     screen_rect = screen.get_rect()
-    pygame.display.set_caption("My Game")
+    pygame.display.set_caption("Fighter!")
     pygame.mouse.set_visible(False)
  
     # Create our objects and set the data
@@ -279,7 +281,7 @@ def main():
         game.display_frame(screen)
  
         # Pause for the next frame
-        clock.tick(60)
+        clock.tick(FPS)
  
     # Close window and exit
     pygame.quit()
