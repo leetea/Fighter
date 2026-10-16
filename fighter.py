@@ -119,6 +119,7 @@ class Game(object):
 
     def __init__(self):
         self.score = 0
+        self.screen_rect = pygame.display.get_surface().get_rect()
         self.game_over = False
         self.moverate = 5
         self.shot = pygame.mixer.Sound("res/fire.ogg")
