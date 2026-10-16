@@ -1,3 +1,4 @@
+import os
 import pygame, random , sys 
 from pygame.locals import *
 
@@ -15,6 +16,23 @@ POWERUP_SHOT_INTERVAL = int(NORMAL_SHOT_INTERVAL / 1.5)
 POWERUP_DURATION = 8000
 POWERUP_SPAWN_INTERVAL = 12000
 
+def asset_path(relative_path):
+    """Return an asset path that works from source and PyInstaller bundles."""
+    bundle_path = getattr(sys, "_MEIPASS", None)
+    if bundle_path:
+        candidates = [bundle_path]
+        if sys.platform == "darwin":
+            # PyInstaller stores macOS app resources in Contents/Resources.
+            candidates.append(os.path.join(os.path.dirname(sys.executable), "..", "Resources"))
+    else:
+        candidates = [os.path.dirname(os.path.abspath(__file__))]
+
+    for base_path in candidates:
+        path = os.path.join(base_path, relative_path)
+        if os.path.exists(path):
+            return path
+    return os.path.join(candidates[0], relative_path)
+
 class Player(pygame.sprite.Sprite):
 
     # set speed vector of the player
@@ -27,7 +45,7 @@ class Player(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
 
         # Create player image
-        self.image = pygame.image.load('res/player.png')
+        self.image = pygame.image.load(asset_path('res/player.png'))
         self.image = pygame.transform.scale(self.image, (50, 50))
         self.image.set_colorkey(WHITE)
 
@@ -58,7 +76,7 @@ class Enemy(pygame.sprite.Sprite):
 
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.image.load('res/enemyShip.png')
+        self.image = pygame.image.load(asset_path('res/enemyShip.png'))
         self.image = pygame.transform.scale(self.image, (50, 50))
         self.image.set_colorkey(WHITE)
         self.rect = self.image.get_rect()
@@ -122,7 +140,7 @@ class Game(object):
         self.screen_rect = pygame.display.get_surface().get_rect()
         self.game_over = False
         self.moverate = 5
-        self.shot = pygame.mixer.Sound("res/fire.ogg")
+        self.shot = pygame.mixer.Sound(asset_path("res/fire.ogg"))
         self.next_shot_time = 0
         self.powerup_expires_at = 0
         self.next_powerup_time = pygame.time.get_ticks() + POWERUP_SPAWN_INTERVAL
