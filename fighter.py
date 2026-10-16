@@ -27,7 +27,7 @@ class Player(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
 
         # Create player image
-        self.image = pygame.image.load('player.png')
+        self.image = pygame.image.load('res/player.png')
         self.image = pygame.transform.scale(self.image, (50, 50))
         self.image.set_colorkey(WHITE)
 
@@ -58,7 +58,7 @@ class Enemy(pygame.sprite.Sprite):
 
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.image.load('enemyShip.png')
+        self.image = pygame.image.load('res/enemyShip.png')
         self.image = pygame.transform.scale(self.image, (50, 50))
         self.image.set_colorkey(WHITE)
         self.rect = self.image.get_rect()
@@ -114,14 +114,14 @@ class Game(object):
     all_sprites_list = None
 
     size = [SCREEN_WIDTH, SCREEN_HEIGHT]
-    screen = pygame.display.set_mode(size)
-    screen_rect = screen.get_rect()
+    screen = None
+    screen_rect = None
 
     def __init__(self):
         self.score = 0
         self.game_over = False
         self.moverate = 5
-        self.shot = pygame.mixer.Sound("fire.ogg")
+        self.shot = pygame.mixer.Sound("res/fire.ogg")
         self.next_shot_time = 0
         self.powerup_expires_at = 0
         self.next_powerup_time = pygame.time.get_ticks() + POWERUP_SPAWN_INTERVAL
