@@ -8,6 +8,15 @@ Desktop.ini
 # Recycle Bin used on file shares
 $RECYCLE.BIN/
 
+# Python and PyInstaller build output
+__pycache__/
+*.py[cod]
+.venv/
+/build/
+/dist/
+/*.spec
+*.app/
+
 # Windows Installer files
 *.cab
 *.msi
